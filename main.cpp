@@ -42,7 +42,39 @@ int findMDN(vector<int>& dest, vector<int>& rowP) {
 
 void EMVC(vector<int>& dest/*inations*/, vector<int>& rowP/*ointers*/, vector<int>& degree, unordered_set<int>& /*Vertex*/ C/*over*/) {
 	int MDN = max_element(degree.begin(), degree.end()) - degree.begin();//MDN: Max Degree Node or node with the maximum number of edges
+
+
+	//In the first/left branch of the search tree, we remove all the edges connected with MDN.
+	vector<int> neighboursRemoved; //to contain the neighbour vertices which has an edge with MDN and hence will be removed. (Note that not all neighbour necessarily have an edge with MNN, some edges might have been deleted previously)
+
+	//remove all edges between MDN and its neighbours
+	for (int neighbour = rowP[MDN]; neighbour < rowP[MDN+1]; neighbour++) {
+		if (degree[dest[neighbour]] == 0) continue; //If the neighbour node has been deleted before, then there is no edge between MDN and the neighbour so skip this neighbour.
+		neighboursRemoved.push_back(dest[neighbour]);
+		degree[dest[neighbour]]--;
+		degree[MDN]--;
+	}
 	
+	bool MDNAlreadyExistsInC = C.count(MDN); //Does MDN already exist in Vertex Cover C?
+	C.insert(MDN);
+	EMVC(dest, rowP, degree, C);
+
+	//Now backtrack from the left branch of the search tree
+	if (!MDNAlreadyExistsInC) C.erase(); //If C didn't already exist in the Vertex Cover, delete it.
+	while (neighboursRemoved.size()) {
+		degree[MDN]++;
+		degree[neighboursRemoved.back()]++;
+		neighboursRemoved.pop_back();
+	}
+	
+	//All the changes have been reverted back. Now we can go to the right branch of the search tree.
+	//In the next part, we remove the neighbours of the MDN and all the related edges.
+	for (int neighbour = rowP[MDN]; neighbour < rowP[MDN+1]; neighbour++) {
+		if (degree[dest[neighbour]] == 0) continue;
+		removeVertex(dest[neighbour], degree, neighboursRemoved);
+		C.insert(dest[neighbour]);
+	}
+
 	
 }
 
